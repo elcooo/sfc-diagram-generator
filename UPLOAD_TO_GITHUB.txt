@@ -1,0 +1,41 @@
+INSTRUCTIONS TO UPLOAD TO GITHUB
+=================================
+
+After creating a new repository on GitHub, run these commands:
+
+1. Add the remote repository (replace YOUR_USERNAME with your GitHub username):
+   
+   git remote add origin https://github.com/YOUR_USERNAME/sfc-diagram-generator.git
+
+2. Rename the branch to main (GitHub's default):
+   
+   git branch -M main
+
+3. Push your code to GitHub:
+   
+   git push -u origin main
+
+That's it! Your code will be uploaded to GitHub.
+
+---
+
+ALTERNATIVE: If you prefer SSH instead of HTTPS, use:
+   
+   git remote add origin git@github.com:YOUR_USERNAME/sfc-diagram-generator.git
+   git branch -M main
+   git push -u origin main
+
+---
+
+Current Status:
+✅ Git repository initialized
+✅ All files committed
+✅ Ready to push to GitHub
+
+Files included in the commit:
+- All source code (src/)
+- Components (StepNode, TransitionNode, EditableLabel)
+- Parser (sclParser.js)
+- Configuration files (package.json, vite.config.js, etc.)
+- README.md with full documentation
+- .gitignore (node_modules excluded)

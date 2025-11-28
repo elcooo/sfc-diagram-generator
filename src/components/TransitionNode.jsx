@@ -37,18 +37,19 @@ export default memo(({ id, data, selected }) => {
 
                 {data.condition && (
                     <div className="transition-label">
-                        <span style={{ opacity: 0.7 }}>
+                        <span style={{ opacity: 0.7, whiteSpace: 'nowrap' }}>
                             (<EditableLabel
                                 value={data.label}
                                 onChange={updateLabel}
-                                style={{ display: 'inline-block', minWidth: '10px' }}
+                                style={{ display: 'inline', minWidth: '10px' }}
                                 autoWidth
                             />)
                         </span>
+                        {' '}
                         <EditableLabel
                             value={data.condition}
                             onChange={updateCondition}
-                            style={{ display: 'inline-block', minWidth: '50px' }}
+                            style={{ display: 'inline', minWidth: '50px', marginLeft: '4px' }}
                             autoWidth
                         />
                     </div>

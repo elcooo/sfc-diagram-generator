@@ -7,6 +7,7 @@ import ReactFlow, {
   addEdge
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import './App.css';
 import { Play, Download, Code } from 'lucide-react';
 
 import StepNode from './components/StepNode';

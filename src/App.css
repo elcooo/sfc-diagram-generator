@@ -66,8 +66,8 @@
 
 .transition-label {
   position: absolute;
-  left: calc(50% + 40px);
-  /* 50% (center) + 30px (half bar width) + 10px (gap) */
+  left: calc(50% + 45px);
+  /* Position to the right: 50% (node center) + 20px (half of 40px node width) + 25px (gap) */
   top: 50%;
   transform: translateY(-50%);
   white-space: nowrap !important;
@@ -83,7 +83,7 @@
   flex-direction: row !important;
   flex-wrap: nowrap !important;
   align-items: center;
-  gap: 8px;
+  gap: 0px;
   pointer-events: all !important;
   overflow: visible !important;
   z-index: 10;
@@ -91,12 +91,14 @@
 
 .transition-label * {
   white-space: nowrap !important;
-  display: inline-block !important;
+  display: inline !important;
   pointer-events: all !important;
+  flex-shrink: 0 !important;
 }
 
 .transition-label input {
   pointer-events: all !important;
   white-space: nowrap !important;
-  display: inline-block !important;
+  display: inline !important;
+  flex-shrink: 0 !important;
 }
