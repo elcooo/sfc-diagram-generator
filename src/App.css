@@ -102,3 +102,39 @@
   display: inline !important;
   flex-shrink: 0 !important;
 }
+
+/* Draggable Edge Styles */
+.react-flow__edge-path {
+  stroke: #fff;
+  stroke-width: 2;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3;
+}
+
+.react-flow__edge.animated .react-flow__edge-path {
+  stroke-dasharray: 5, 5;
+  animation: dash 0.5s linear infinite;
+}
+
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* Ensure edge drag handles capture pointer events */
+.react-flow__edge g.nodrag {
+  pointer-events: all !important;
+  cursor: ew-resize !important;
+}
+
+.react-flow__edge g.nodrag rect {
+  pointer-events: all !important;
+  cursor: ew-resize !important;
+}
+
+.react-flow__edge g.nodrag * {
+  cursor: ew-resize;
+}

@@ -19,13 +19,14 @@ export const parseSCL = (code) => {
       id,
       source,
       target,
-      type: 'smoothstep',
+      type: 'draggable',
       animated: isJump,
       style: isJump ? { stroke: '#fff', strokeDasharray: '5,5' } : { stroke: '#fff' },
       markerEnd: {
         type: 'arrowclosed',
         color: '#fff',
       },
+      data: { offsetX: 0, offsetY1: 0, offsetY2: 0 },
     });
   };
 

@@ -12,11 +12,16 @@ import { Play, Download, Code } from 'lucide-react';
 
 import StepNode from './components/StepNode';
 import TransitionNode from './components/TransitionNode';
+import DraggableEdge from './components/DraggableEdge';
 import { parseSCL, exampleCode } from './utils/sclParser';
 
 const nodeTypes = {
   step: StepNode,
   transition: TransitionNode,
+};
+
+const edgeTypes = {
+  draggable: DraggableEdge,
 };
 
 function App() {
@@ -171,11 +176,14 @@ STEP S3`}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           attributionPosition="bottom-right"
           nodesDraggable={true}
           nodesConnectable={false}
           elementsSelectable={true}
+          edgesFocusable={true}
+          edgesUpdatable={true}
         >
           <Background color="#fff" gap={20} size={1} style={{ background: '#000' }} />
           <Controls style={{
