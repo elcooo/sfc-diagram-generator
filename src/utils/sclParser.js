@@ -70,7 +70,7 @@ export const parseSCL = (code) => {
           id: name,
           type: 'transition',
           data: { label: name, condition: '' },
-          width: 40, // Visual width (layout width is handled separately)
+          width: 90, // Visual width - 50% larger bar
           height: 60
         };
 

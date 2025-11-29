@@ -26,9 +26,9 @@
 }
 
 .sfc-transition-node {
-  width: 60px;
-  height: 4px;
-  /* Fixed height for the bar */
+  width: 90px;
+  height: 6px;
+  /* Fixed height for the bar - 50% larger */
   background: #fff;
   position: relative;
   display: flex;
@@ -39,7 +39,12 @@
 
 .react-flow__node-transition.selected .sfc-transition-node {
   background: #3b82f6;
-  height: 4px;
+  height: 6px;
+}
+
+/* Larger clickable area for transition nodes */
+.react-flow__node-transition {
+  padding: 15px 10px;
 }
 
 /* Action Box attached to Step */
@@ -66,8 +71,8 @@
 
 .transition-label {
   position: absolute;
-  left: calc(50% + 45px);
-  /* Position to the right: 50% (node center) + 20px (half of 40px node width) + 25px (gap) */
+  left: calc(50% + 60px);
+  /* Position to the right: 50% (node center) + 45px (half of 90px bar width) + 15px (gap) */
   top: 50%;
   transform: translateY(-50%);
   white-space: nowrap !important;

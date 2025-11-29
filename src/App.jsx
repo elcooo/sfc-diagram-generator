@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -8,12 +8,20 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import './App.css';
-import { Play, Download, Code } from 'lucide-react';
+import { Play, Code, Save, FolderOpen, Trash2, X } from 'lucide-react';
 
 import StepNode from './components/StepNode';
 import TransitionNode from './components/TransitionNode';
 import DraggableEdge from './components/DraggableEdge';
 import { parseSCL, exampleCode } from './utils/sclParser';
+import {
+  getSavedDiagrams,
+  saveDiagram,
+  deleteDiagram,
+  saveLastSession,
+  loadLastSession,
+  formatDate
+} from './utils/diagramStorage';
 
 const nodeTypes = {
   step: StepNode,
@@ -29,6 +37,12 @@ function App() {
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [showHelp, setShowHelp] = useState(false);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [showLoadModal, setShowLoadModal] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [savedDiagrams, setSavedDiagrams] = useState([]);
+  const [currentDiagramName, setCurrentDiagramName] = useState('');
+  const autoSaveTimer = useRef(null);
 
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -49,9 +63,87 @@ function App() {
     setEdges(newEdges);
   };
 
+  // Load last session or example on startup
   useEffect(() => {
-    handleParse();
+    const lastSession = loadLastSession();
+    if (lastSession && lastSession.code) {
+      setCode(lastSession.code);
+      if (lastSession.nodes && lastSession.nodes.length > 0) {
+        setNodes(lastSession.nodes);
+        setEdges(lastSession.edges || []);
+      } else {
+        // Parse the code if no nodes saved
+        const { nodes: newNodes, edges: newEdges } = parseSCL(lastSession.code);
+        setNodes(newNodes);
+        setEdges(newEdges);
+      }
+    } else {
+      handleParse();
+    }
+    // Load saved diagrams list
+    setSavedDiagrams(getSavedDiagrams());
   }, []);
+
+  // Auto-save session when code, nodes, or edges change
+  useEffect(() => {
+    if (autoSaveTimer.current) {
+      clearTimeout(autoSaveTimer.current);
+    }
+    autoSaveTimer.current = setTimeout(() => {
+      saveLastSession(code, nodes, edges);
+    }, 1000); // Save after 1 second of inactivity
+
+    return () => {
+      if (autoSaveTimer.current) {
+        clearTimeout(autoSaveTimer.current);
+      }
+    };
+  }, [code, nodes, edges]);
+
+  // Handle save diagram
+  const handleSave = () => {
+    if (!saveName.trim()) return;
+    
+    saveDiagram(saveName.trim(), code, nodes, edges);
+    setSavedDiagrams(getSavedDiagrams());
+    setCurrentDiagramName(saveName.trim());
+    setShowSaveModal(false);
+    setSaveName('');
+  };
+
+  // Handle load diagram
+  const handleLoad = (diagram) => {
+    setCode(diagram.code);
+    if (diagram.nodes && diagram.nodes.length > 0) {
+      setNodes(diagram.nodes);
+      setEdges(diagram.edges || []);
+    } else {
+      const { nodes: newNodes, edges: newEdges } = parseSCL(diagram.code);
+      setNodes(newNodes);
+      setEdges(newEdges);
+    }
+    setCurrentDiagramName(diagram.name);
+    setShowLoadModal(false);
+  };
+
+  // Handle delete diagram
+  const handleDelete = (e, id) => {
+    e.stopPropagation();
+    if (confirm('Delete this diagram?')) {
+      deleteDiagram(id);
+      setSavedDiagrams(getSavedDiagrams());
+    }
+  };
+
+  // Quick save (update current or open save modal)
+  const handleQuickSave = () => {
+    if (currentDiagramName) {
+      saveDiagram(currentDiagramName, code, nodes, edges);
+      setSavedDiagrams(getSavedDiagrams());
+    } else {
+      setShowSaveModal(true);
+    }
+  };
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100%', background: '#0f172a' }}>
@@ -77,6 +169,76 @@ function App() {
               <span>Run</span>
             </button>
           </div>
+        </div>
+
+        {/* Save/Load toolbar */}
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          padding: '8px 16px',
+          borderBottom: '1px solid #334155',
+          background: '#1e293b',
+          alignItems: 'center',
+        }}>
+          <button
+            onClick={handleQuickSave}
+            title={currentDiagramName ? `Save "${currentDiagramName}"` : "Save As..."}
+            style={{
+              background: '#22c55e',
+              border: 'none',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '13px',
+            }}
+          >
+            <Save size={14} />
+            <span>Save</span>
+          </button>
+          <button
+            onClick={() => setShowSaveModal(true)}
+            title="Save As..."
+            style={{
+              background: 'transparent',
+              border: '1px solid #475569',
+              padding: '6px 12px',
+              fontSize: '13px',
+            }}
+          >
+            Save As
+          </button>
+          <button
+            onClick={() => {
+              setSavedDiagrams(getSavedDiagrams());
+              setShowLoadModal(true);
+            }}
+            title="Open Diagram"
+            style={{
+              background: 'transparent',
+              border: '1px solid #475569',
+              padding: '6px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '13px',
+            }}
+          >
+            <FolderOpen size={14} />
+            <span>Open</span>
+          </button>
+          {currentDiagramName && (
+            <span style={{
+              marginLeft: 'auto',
+              fontSize: '12px',
+              color: '#64748b',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}>
+              {currentDiagramName}
+            </span>
+          )}
         </div>
 
         <div style={{ flex: 1, padding: '0', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -209,6 +371,206 @@ STEP S3`}
           </div>
         </div>
       </div>
+
+      {/* Save Modal */}
+      {showSaveModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+        }}>
+          <div style={{
+            background: '#1e293b',
+            borderRadius: '12px',
+            padding: '24px',
+            width: '400px',
+            border: '1px solid #334155',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0, color: '#fff', fontSize: '18px' }}>Save Diagram</h2>
+              <button
+                onClick={() => setShowSaveModal(false)}
+                style={{ background: 'transparent', border: 'none', padding: '4px', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <input
+              type="text"
+              placeholder="Enter diagram name..."
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              autoFocus
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid #475569',
+                background: '#0f172a',
+                color: '#fff',
+                fontSize: '14px',
+                boxSizing: 'border-box',
+                marginBottom: '16px',
+              }}
+            />
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowSaveModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #475569',
+                  padding: '10px 20px',
+                  color: '#94a3b8',
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!saveName.trim()}
+                style={{
+                  background: saveName.trim() ? '#22c55e' : '#475569',
+                  border: 'none',
+                  padding: '10px 20px',
+                  color: '#fff',
+                  cursor: saveName.trim() ? 'pointer' : 'not-allowed',
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Load Modal */}
+      {showLoadModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 100,
+        }}>
+          <div style={{
+            background: '#1e293b',
+            borderRadius: '12px',
+            padding: '24px',
+            width: '500px',
+            maxHeight: '70vh',
+            border: '1px solid #334155',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0, color: '#fff', fontSize: '18px' }}>Open Diagram</h2>
+              <button
+                onClick={() => setShowLoadModal(false)}
+                style={{ background: 'transparent', border: 'none', padding: '4px', color: '#94a3b8', cursor: 'pointer' }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div style={{ flex: 1, overflowY: 'auto', minHeight: '200px' }}>
+              {savedDiagrams.length === 0 ? (
+                <div style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  color: '#64748b',
+                }}>
+                  <FolderOpen size={48} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                  <p style={{ margin: 0 }}>No saved diagrams yet</p>
+                  <p style={{ margin: '8px 0 0 0', fontSize: '13px' }}>Save your first diagram to see it here</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {savedDiagrams.map((diagram) => (
+                    <div
+                      key={diagram.id}
+                      onClick={() => handleLoad(diagram)}
+                      style={{
+                        padding: '12px 16px',
+                        background: '#0f172a',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        border: '1px solid #334155',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#334155';
+                        e.currentTarget.style.borderColor = '#3b82f6';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#0f172a';
+                        e.currentTarget.style.borderColor = '#334155';
+                      }}
+                    >
+                      <div>
+                        <div style={{ color: '#fff', fontWeight: '500', marginBottom: '4px' }}>
+                          {diagram.name}
+                        </div>
+                        <div style={{ color: '#64748b', fontSize: '12px' }}>
+                          Updated {formatDate(diagram.updatedAt)}
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => handleDelete(e, diagram.id)}
+                        title="Delete diagram"
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          padding: '8px',
+                          color: '#64748b',
+                          cursor: 'pointer',
+                          borderRadius: '4px',
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = '#ef4444'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = '#64748b'}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #334155' }}>
+              <button
+                onClick={() => setShowLoadModal(false)}
+                style={{
+                  width: '100%',
+                  background: 'transparent',
+                  border: '1px solid #475569',
+                  padding: '10px 20px',
+                  color: '#94a3b8',
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
